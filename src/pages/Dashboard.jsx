@@ -54,7 +54,7 @@ const Dashboard = () => {
                     {/* Card 4 */}
                     <div style={cardStyle}>
                         <h3>Revenue Risk</h3>
-                        <p style={{...numberStyle, color: 'orange'}}>${stats.totalRevenueAtRisk}</p>
+                        <p style={{...numberStyle, color: 'orange'}}>{stats.totalRevenueAtRisk}</p>
                     </div>
                 </div>
             </div>

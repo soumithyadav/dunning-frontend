@@ -23,23 +23,29 @@ const CustomerDashboard = () => {
         try {
             // 1. Get Customer Profile
             const profileData = await getMyProfile();
+            console.log("customer data:"+profileData);
             setCustomer(profileData);
 
             // 2. Get Services (TelecomServiceController)
             // We need the service ID to find bills
             const servicesData = await getCustomerServices(profileData.id);
+            console.log("service data:"+servicesData)
 
             if (servicesData && servicesData.length > 0) {
                 const mainService = servicesData[0]; // Assuming single service for now
+                console.log("main service data:"+mainService.id);
                 setService(mainService);
 
                 // 3. Get Unpaid Bills (BillingController)
                 const billsData = await getUnpaidBills(mainService.id);
+                console.log("unpaid bill:"+JSON.stringify(billsData, null, 2));
                 if (billsData && billsData.length > 0) {
                     setBill(billsData[0]); // Grab the oldest/first unpaid bill
                 } else {
                     setBill(null); // No bills due
                 }
+            }else{
+                console.warn("No services found for this customer!");
             }
         } catch (err) {
             console.error("Failed to load dashboard data", err);
@@ -137,7 +143,7 @@ const CustomerDashboard = () => {
                                 <p style={{ margin: '0 0 5px 0', color: '#666' }}>Amount Due</p>
                                 {/* Dynamic Amount */}
                                 <span style={{ fontSize: '32px', fontWeight: 'bold', color: '#333' }}>
-                                    ${bill.amount}
+                                    {bill.billAmount}
                                 </span>
                                 <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#888' }}>
                                     Due Date: {bill.dueDate}

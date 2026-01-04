@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { login } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Login = () => {
     const [username, setUsername] = useState('');
@@ -9,16 +9,16 @@ const Login = () => {
     const [isHovered, setIsHovered] = useState(false);
     const navigate = useNavigate();
 
+    // Clear existing tokens when the login page loads
     useEffect(() => {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
         
-        // OPTIONAL: This ensures no white borders from the body tag
+        // Optional: Reset body styles to ensure full-page background works
         document.body.style.margin = "0"; 
         document.body.style.padding = "0";
         document.body.style.boxSizing = "border-box";
 
-        // Cleanup function to reset body styles when leaving this page (optional)
         return () => {
             document.body.style.margin = "";
             document.body.style.padding = "";
@@ -27,35 +27,50 @@ const Login = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        setError(''); // Clear previous errors
+
         try {
-            const data = await login(username, password);
-            console.log("Server details:", data);
+            // 1. Call the API directly (avoiding interceptor issues for login)
+            const response = await axios.post("http://localhost:3000/api/auth/login", {
+                username, 
+                password
+            });
 
-            if (!data || !data.token) {
-                throw new Error("Token missing in response");
+            console.log("Login Response:", response.data); 
+
+            // 2. Extract Token and Role
+            const { token, role } = response.data;
+
+            if (!token) {
+                throw new Error("Token missing in server response");
             }
-            
-            localStorage.setItem('token', data.token);
 
-            let role = "CUSTOMER";
-            if (data.role) {
-                role = data.role.toUpperCase().replace('ROLE_', '');
-            }
-            localStorage.setItem('role', role);
+            // 3. Store in LocalStorage
+            localStorage.setItem("token", token);
+            localStorage.setItem("role", role);
 
-            if (role === 'ADMIN') {
+            // 4. Redirect based on Role
+            if (role === 'ROLE_CUSTOMER' || role === 'CUSTOMER') {
+                navigate('/my-account'); // Redirect to Customer Dashboard
+            } 
+            else if (role === 'ROLE_ADMIN' || role === 'ADMIN') {
+                navigate('/dashboard');  
+            } 
+            else {
+                // Fallback for unexpected roles
+                console.warn("Unknown role:", role);
                 navigate('/dashboard');
-            } else {
-                navigate('/my-account'); 
             }
+
         } catch (err) {
-            console.error(err);
-            setError('Invalid Credentials');
+            console.error("Login Error:", err);
+            // Handle different error structures (axios error vs generic error)
+            const errorMessage = err.response?.data?.message || err.message || "Login failed. Please check credentials.";
+            setError(errorMessage);
         }
     };
 
     return (
-        // The outer div acts as the full-page background
         <div style={styles.pageContainer}>
             <div style={styles.loginCard}>
                 <h2 style={styles.heading}>Dunning System Login</h2>
@@ -66,11 +81,11 @@ const Login = () => {
                         <input
                             type="text"
                             id="username"
-                            // autoComplete="username"
-                            placeholder="username"
+                            placeholder="Enter username"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             style={styles.input}
+                            required
                         />
                     </div>
                     
@@ -79,10 +94,11 @@ const Login = () => {
                         <input
                             type="password"
                             id="password"
-                            placeholder="password"
+                            placeholder="Enter password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             style={styles.input}
+                            required
                         />
                     </div>
 
@@ -105,14 +121,14 @@ const Login = () => {
 const styles = {
     // 1. FULL PAGE CONTAINER
     pageContainer: {
-        display: 'flex',            // Enables Flexbox
-        justifyContent: 'center',   // Centers horizontally
-        alignItems: 'center',       // Centers vertically
-        minHeight: '100vh',         // Takes full viewport height
-        width: '100vw',             // Takes full viewport width
-        backgroundColor: '#f4f7f6', // Light grey background
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        width: '100vw',
+        backgroundColor: '#f4f7f6',
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        position: 'absolute',       // Forces it to sit on top of everything
+        position: 'absolute',
         top: 0,
         left: 0,
     },
@@ -121,9 +137,9 @@ const styles = {
         backgroundColor: '#ffffff',
         padding: '40px',
         borderRadius: '12px',
-        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)', // Soft shadow
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
         width: '100%',
-        maxWidth: '400px',          // Prevents it from getting too wide
+        maxWidth: '400px',
         textAlign: 'center',
     },
     heading: {
@@ -153,7 +169,7 @@ const styles = {
         fontSize: '16px',
         border: '1px solid #ddd',
         borderRadius: '6px',
-        boxSizing: 'border-box', // Crucial for keeping padding inside width
+        boxSizing: 'border-box',
         outline: 'none',
         transition: 'all 0.3s ease',
         backgroundColor: '#fafafa',
@@ -161,7 +177,7 @@ const styles = {
     button: {
         width: '100%',
         padding: '14px',
-        backgroundColor: '#2563eb', // Nice modern blue
+        backgroundColor: '#2563eb',
         color: 'white',
         border: 'none',
         borderRadius: '6px',
@@ -172,7 +188,7 @@ const styles = {
         marginTop: '10px',
     },
     buttonHover: {
-        backgroundColor: '#1d4ed8', // Darker blue on hover
+        backgroundColor: '#1d4ed8',
     },
     errorMessage: {
         marginTop: '20px',
