@@ -47,7 +47,7 @@ export const getUnpaidBills = async (serviceId) => {
     // FIXED: Changed 'axios.get' to 'api.get'
     // serviceId=serviceId-1;
     const response = await api.get(`/bills/unpaid/${serviceId}`);
-    console.log(response.data+" "+serviceId);
+    // console.log(response.data+" "+serviceId);
     
     return response.data;
 };
@@ -88,5 +88,20 @@ export const runDunningProcess = async () => {
     const response = await api.post('/dunning/run');
     return response.data;
 };
+// Add this new function for Admin Override
+export const updateServiceStatus = async (serviceId, newStatus) => {
+    // PATCH request to update status
+    // Example URL: /api/services/101/status?status=ACTIVE
+    const response = await api.put(`/services/${serviceId}/status?status=${newStatus}`);
+    return response.data;
+};
+
+export const deleteRule = async (ruleId) => {
+    // Note: uses 'api.delete', not 'get' or 'post'
+    const response = await api.delete(`/dunning/rules/${ruleId}`);
+    return response.data;
+};
+
+// ... export default api;
 
 export default api;

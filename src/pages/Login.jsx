@@ -36,7 +36,7 @@ const Login = () => {
                 password
             });
 
-            console.log("Login Response:", response.data); 
+            // console.log("Login Response:", response.data); 
 
             // 2. Extract Token and Role
             const { token, role } = response.data;

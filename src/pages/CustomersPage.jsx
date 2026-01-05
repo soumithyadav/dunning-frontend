@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
-import { getAllCustomers1 } from '../services/api';
-
+import { getAllCustomers1, updateServiceStatus } from '../services/api'; // <--- Ensure updateServiceStatus is imported
 
 const CustomersPage = () => {
     const [customers, setCustomers] = useState([]);
+    const [loading, setLoading] = useState(false); // <--- Added missing state
 
     useEffect(() => {
         loadCustomers();
@@ -19,12 +19,45 @@ const CustomersPage = () => {
         }
     };
 
+    const handleStatusChange = async (serviceId, newStatus) => {
+        if (!window.confirm(`Are you sure you want to set this service to ${newStatus}?`)) return;
+
+        setLoading(true);
+        try {
+            await updateServiceStatus(serviceId, newStatus);
+            alert(`✅ Service updated to ${newStatus}`);
+            loadCustomers(); 
+        } catch (err) {
+            console.error(err);
+            alert('❌ Failed to update status');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const renderStatus = (cust) => {
+        const service = cust.services && cust.services.length > 0 ? cust.services[0] : null;
+        const displayStatus = service ? service.status : (cust.user?.status || 'N/A');
+        
+        // Remove 'ACTIVE' from this list so it shows as green
+        const isBadStatus = ['RESTRICTED', 'BLOCKED', 'SUSPENDED', 'INACTIVE'].includes(displayStatus);
+        
+        return (
+            <span style={isBadStatus ? blockedBadge : activeBadge}>
+                {displayStatus}
+            </span>
+        );
+    }
+
     return (
         <div>
             <Navbar />
             <div style={{ padding: '40px', maxWidth: '100%', margin: '0 auto' }}>
-                <h1>👥 Customer Directory</h1>
-                
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                    <h1>👥 Customer Directory</h1>
+                    {loading && <span style={{color:'blue'}}>Updating...</span>}
+                </div>
+
                 <table style={tableStyle}>
                     <thead>
                         <tr style={{ backgroundColor: '#007bff', color: 'white' }}>
@@ -33,22 +66,55 @@ const CustomersPage = () => {
                             <th style={thStyle}>Email</th>
                             <th style={thStyle}>Phone</th>
                             <th style={thStyle}>Status</th>
+                            <th style={thStyle}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {customers.map(cust => (
-                            <tr key={cust.id} style={{ borderBottom: '1px solid #ddd' }}>
-                                <td style={tdStyle}>#{cust.id}</td>
-                                <td style={tdStyle}>{cust.name} {cust.lastName}</td>
-                                <td style={tdStyle}>{cust.user?.email}</td>
-                                <td style={tdStyle}>{cust.user?.phone}</td>
-                                <td style={tdStyle}>
-                                    <span style={cust.user?.status === 'ACTIVE' ? activeBadge : blockedBadge}>
-                                        {cust.user?.status}
-                                    </span>
-                                </td>
-                            </tr>
-                        ))}
+                        {customers.map(cust => {
+                            // --- FIX START: Define variables here ---
+                            const service = cust.services && cust.services.length > 0 ? cust.services[0] : null;
+                            const isBlocked = service && ['BLOCKED', 'SUSPENDED', 'RESTRICTED'].includes(service.status);
+                            // --- FIX END ---
+
+                            return (
+                                <tr key={cust.id} style={{ borderBottom: '1px solid #ddd' }}>
+                                    <td style={tdStyle}>#{cust.id}</td>
+                                    <td style={tdStyle}>{cust.name} {cust.lastName}</td>
+                                    <td style={tdStyle}>{cust.user?.email}</td>
+                                    <td style={tdStyle}>{cust.user?.phone}</td>
+                                    
+                                    <td style={tdStyle}>
+                                        {renderStatus(cust)}
+                                    </td>
+
+                                    <td style={tdStyle}>
+                                        {service ? (
+                                            <>
+                                                {isBlocked ? (
+                                                    <button 
+                                                        onClick={() => handleStatusChange(service.id, 'ACTIVE')}
+                                                        style={activateBtnStyle}
+                                                        disabled={loading}
+                                                    >
+                                                        ✅ Activate
+                                                    </button>
+                                                ) : (
+                                                    <button 
+                                                        onClick={() => handleStatusChange(service.id, 'BLOCKED')}
+                                                        style={blockBtnStyle}
+                                                        disabled={loading}
+                                                    >
+                                                        ⛔ Block
+                                                    </button>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <span style={{color:'#999'}}>No Service</span>
+                                        )}
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
@@ -56,7 +122,7 @@ const CustomersPage = () => {
     );
 };
 
-// --- CSS Styles for Table ---
+// --- CSS Styles ---
 const tableStyle = {
     width: '100%',
     borderCollapse: 'collapse',
@@ -68,11 +134,19 @@ const thStyle = { padding: '12px', textAlign: 'left', borderBottom: '2px solid #
 const tdStyle = { padding: '12px', borderBottom: '1px solid #eee' };
 
 const activeBadge = {
-    backgroundColor: '#d4edda', color: '#155724', padding: '5px 10px', borderRadius: '15px', fontWeight: 'bold', fontSize: '12px'
+    backgroundColor: '#d1e7dd', color: '#0f5132', padding: '5px 10px', borderRadius: '15px', fontWeight: 'bold', fontSize: '12px'
 };
 
 const blockedBadge = {
-    backgroundColor: '#f8d7da', color: '#721c24', padding: '5px 10px', borderRadius: '15px', fontWeight: 'bold', fontSize: '12px'
+    backgroundColor: '#f8d7da', color: '#842029', padding: '5px 10px', borderRadius: '15px', fontWeight: 'bold', fontSize: '12px'
+};
+
+const activateBtnStyle = { 
+    backgroundColor: '#28a745', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' 
+};
+
+const blockBtnStyle = { 
+    backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' 
 };
 
 export default CustomersPage;

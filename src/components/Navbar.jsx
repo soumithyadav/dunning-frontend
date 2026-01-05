@@ -30,7 +30,7 @@ const Navbar = () => {
                 {/* --- LINKS FOR CUSTOMERS ONLY --- */}
                 {/* You can add specific customer links here if needed, or just keep it simple */}
                 {role === 'ROLE_CUSTOMER' && (
-                    <span style={{ color: '#e0e0e0', marginRight: '15px' }}>My Account</span>
+                    <span style={{ color: '#e0e0e0', marginRight: '15px' }}>Dashboard</span>
                 )}
 
                 <button onClick={handleLogout} style={buttonStyle}>Logout</button>

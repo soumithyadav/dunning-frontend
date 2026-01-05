@@ -23,22 +23,22 @@ const CustomerDashboard = () => {
         try {
             // 1. Get Customer Profile
             const profileData = await getMyProfile();
-            console.log("customer data:"+profileData);
+            // console.log("customer data:"+profileData);
             setCustomer(profileData);
 
             // 2. Get Services (TelecomServiceController)
             // We need the service ID to find bills
             const servicesData = await getCustomerServices(profileData.id);
-            console.log("service data:"+servicesData)
+            // console.log("service data:"+servicesData)
 
             if (servicesData && servicesData.length > 0) {
                 const mainService = servicesData[0]; // Assuming single service for now
-                console.log("main service data:"+mainService.id);
+                // console.log("main service data:"+mainService.id);
                 setService(mainService);
 
                 // 3. Get Unpaid Bills (BillingController)
                 const billsData = await getUnpaidBills(mainService.id);
-                console.log("unpaid bill:"+JSON.stringify(billsData, null, 2));
+                // console.log("unpaid bill:"+JSON.stringify(billsData, null, 2));
                 if (billsData && billsData.length > 0) {
                     setBill(billsData[0]); // Grab the oldest/first unpaid bill
                 } else {
