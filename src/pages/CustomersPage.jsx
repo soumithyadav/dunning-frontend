@@ -43,8 +43,8 @@ const CustomersPage = () => {
                                 <td style={tdStyle}>{cust.user?.email}</td>
                                 <td style={tdStyle}>{cust.user?.phone}</td>
                                 <td style={tdStyle}>
-                                    <span style={cust.status === 'ACTIVE' ? activeBadge : blockedBadge}>
-                                        {cust.status}
+                                    <span style={cust.user?.status === 'ACTIVE' ? activeBadge : blockedBadge}>
+                                        {cust.user?.status}
                                     </span>
                                 </td>
                             </tr>

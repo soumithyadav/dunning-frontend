@@ -18,7 +18,7 @@ const Navbar = () => {
             
             <div style={linkContainer}>
                 {/* --- LINKS FOR ADMINS ONLY --- */}
-                {role === 'ADMIN' && (
+                {role === 'ROLE_ADMIN' && (
                     <>
                         <Link to="/dashboard" style={linkStyle}>Dashboard</Link>
                         <Link to="/customers-list" style={linkStyle}>Customers</Link>
@@ -29,7 +29,7 @@ const Navbar = () => {
 
                 {/* --- LINKS FOR CUSTOMERS ONLY --- */}
                 {/* You can add specific customer links here if needed, or just keep it simple */}
-                {role === 'CUSTOMER' && (
+                {role === 'ROLE_CUSTOMER' && (
                     <span style={{ color: '#e0e0e0', marginRight: '15px' }}>My Account</span>
                 )}
 
