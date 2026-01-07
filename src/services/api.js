@@ -51,13 +51,14 @@ export const getUnpaidBills = async (serviceId) => {
     
     return response.data;
 };
-
 export const processPayment = async (billId, amount, mode) => {
-    // FIXED: Changed 'axios.post' to 'api.post'
-    const response = await api.post(`/payments/pay`, { 
-        billId, 
-        amount, 
-        paymentMode: mode 
+    // The Controller expects parameters in the URL query string
+    // POST /api/payments/pay/{billId}?amount=XX&mode=XX
+    const response = await api.post(`/payments/pay/${billId}`, null, {
+        params: {
+            amount: amount,
+            mode: mode
+        }
     });
     return response.data;
 };
@@ -101,7 +102,14 @@ export const deleteRule = async (ruleId) => {
     const response = await api.delete(`/dunning/rules/${ruleId}`);
     return response.data;
 };
+// to get the logs from dunning controller
 
-// ... export default api;
+export const getSystemLogs = async () => {
+    // Matches the controller endpoint: /api/dunning/logs
+    const response = await api.get('/dunning/logs');
+    return response.data;
+};
+
+
 
 export default api;

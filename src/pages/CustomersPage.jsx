@@ -5,6 +5,8 @@ import { getAllCustomers1, updateServiceStatus } from '../services/api'; // <---
 const CustomersPage = () => {
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(false); // <--- Added missing state
+    const [filteredCustomers, setFilteredCustomers] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         loadCustomers();
@@ -14,10 +16,23 @@ const CustomersPage = () => {
         try {
             const data = await getAllCustomers1();
             setCustomers(data);
+            setFilteredCustomers(data);
         } catch (err) {
             console.error("Failed to load customers", err);
         }
     };
+
+    const handleSearch = async (e) => {
+        const term = e.target.value.toLowerCase();
+        setSearchTerm(term);
+        const filtered = customers.filter(cust => {
+            const idMatch = cust.id.toString().includes(term);
+            const phoneMatch = cust.user?.phone && cust.user.phone.toLowerCase().includes(term);
+            const nameMatch = cust.name.toLowerCase().includes(term);
+            return idMatch || phoneMatch || nameMatch;
+        })
+        setFilteredCustomers(filtered)
+    }
 
     const handleStatusChange = async (serviceId, newStatus) => {
         if (!window.confirm(`Are you sure you want to set this service to ${newStatus}?`)) return;
@@ -26,7 +41,8 @@ const CustomersPage = () => {
         try {
             await updateServiceStatus(serviceId, newStatus);
             alert(`✅ Service updated to ${newStatus}`);
-            loadCustomers(); 
+            loadCustomers();
+            setSearchTerm('')
         } catch (err) {
             console.error(err);
             alert('❌ Failed to update status');
@@ -38,10 +54,10 @@ const CustomersPage = () => {
     const renderStatus = (cust) => {
         const service = cust.services && cust.services.length > 0 ? cust.services[0] : null;
         const displayStatus = service ? service.status : (cust.user?.status || 'N/A');
-        
+
         // Remove 'ACTIVE' from this list so it shows as green
         const isBadStatus = ['RESTRICTED', 'BLOCKED', 'SUSPENDED', 'INACTIVE'].includes(displayStatus);
-        
+
         return (
             <span style={isBadStatus ? blockedBadge : activeBadge}>
                 {displayStatus}
@@ -53,11 +69,20 @@ const CustomersPage = () => {
         <div>
             <Navbar />
             <div style={{ padding: '40px', maxWidth: '100%', margin: '0 auto' }}>
-                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                     <h1>👥 Customer Directory</h1>
-                    {loading && <span style={{color:'blue'}}>Updating...</span>}
-                </div>
 
+                    {/* --- NEW: SEARCH BAR --- */}
+                    <input
+                        type="text"
+                        placeholder="🔍 Search by ID, Phone, or Name..."
+                        value={searchTerm}
+                        onChange={handleSearch}
+                        style={searchStyle}
+                    />
+                </div>
+            </div>
+            <div>
                 <table style={tableStyle}>
                     <thead>
                         <tr style={{ backgroundColor: '#007bff', color: 'white' }}>
@@ -70,7 +95,8 @@ const CustomersPage = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {customers.map(cust => {
+                        {filteredCustomers.length>0?(
+                            filteredCustomers.map(cust=>{
                             // --- FIX START: Define variables here ---
                             const service = cust.services && cust.services.length > 0 ? cust.services[0] : null;
                             const isBlocked = service && ['BLOCKED', 'SUSPENDED', 'RESTRICTED'].includes(service.status);
@@ -82,7 +108,7 @@ const CustomersPage = () => {
                                     <td style={tdStyle}>{cust.name} {cust.lastName}</td>
                                     <td style={tdStyle}>{cust.user?.email}</td>
                                     <td style={tdStyle}>{cust.user?.phone}</td>
-                                    
+
                                     <td style={tdStyle}>
                                         {renderStatus(cust)}
                                     </td>
@@ -91,7 +117,7 @@ const CustomersPage = () => {
                                         {service ? (
                                             <>
                                                 {isBlocked ? (
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleStatusChange(service.id, 'ACTIVE')}
                                                         style={activateBtnStyle}
                                                         disabled={loading}
@@ -99,7 +125,7 @@ const CustomersPage = () => {
                                                         ✅ Activate
                                                     </button>
                                                 ) : (
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleStatusChange(service.id, 'BLOCKED')}
                                                         style={blockBtnStyle}
                                                         disabled={loading}
@@ -109,12 +135,19 @@ const CustomersPage = () => {
                                                 )}
                                             </>
                                         ) : (
-                                            <span style={{color:'#999'}}>No Service</span>
+                                            <span style={{ color: '#999' }}>No Service</span>
                                         )}
                                     </td>
                                 </tr>
                             );
-                        })}
+                        })
+                        ) : (
+                            <tr>
+                                <td colSpan="6" style={{textAlign:'center', padding:'20px', color:'#777'}}>
+                                    No customers found matching "{searchTerm}"
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -141,12 +174,21 @@ const blockedBadge = {
     backgroundColor: '#f8d7da', color: '#842029', padding: '5px 10px', borderRadius: '15px', fontWeight: 'bold', fontSize: '12px'
 };
 
-const activateBtnStyle = { 
-    backgroundColor: '#28a745', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' 
+const activateBtnStyle = {
+    backgroundColor: '#28a745', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold'
 };
 
-const blockBtnStyle = { 
-    backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' 
+const blockBtnStyle = {
+    backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold'
+};
+const searchStyle = {
+    padding: '10px 15px',
+    width: '300px',
+    borderRadius: '20px',
+    border: '1px solid #ccc',
+    fontSize: '16px',
+    outline: 'none',
+    boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
 };
 
 export default CustomersPage;

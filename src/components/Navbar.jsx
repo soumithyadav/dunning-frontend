@@ -24,6 +24,7 @@ const Navbar = () => {
                         <Link to="/customers-list" style={linkStyle}>Customers</Link>
                         <Link to="/rules" style={linkStyle}>Rules Engine</Link>
                         <Link to="/payments" style={linkStyle}>Payment Sim</Link>
+                        <Link to="/logs" style={linkStyle}>Audit Logs</Link>
                     </>
                 )}
 

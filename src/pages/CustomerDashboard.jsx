@@ -59,7 +59,7 @@ const CustomerDashboard = () => {
 
         try {
             // MATCHING BACKEND: PaymentController takes billId, amount, mode
-            await processPayment(bill.id, bill.amount, "CARD");
+            await processPayment(bill.id, bill.billAmount, "CARD");
 
             // UI Feedback from PDF [cite: 16]
             setPayStatus('✅ Payment Successful! Your services are now restored.');
