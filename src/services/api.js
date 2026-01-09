@@ -110,6 +110,11 @@ export const getSystemLogs = async () => {
     return response.data;
 };
 
+// openai
+export const sendChatMessage = async (message) => {
+    const response = await api.post('/chat/ask', { message });
+    return response.data.response; // Returns the AI string directly
+};
 
 
 export default api;

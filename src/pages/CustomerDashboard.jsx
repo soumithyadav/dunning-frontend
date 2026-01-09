@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
+import ChatWidget from '../services/ChatWidget';
 import {
     getMyProfile,
     getCustomerServices,
@@ -179,6 +180,7 @@ const CustomerDashboard = () => {
                 </div>
 
             </div>
+             <ChatWidget />
         </div>
     );
 };
