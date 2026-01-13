@@ -11,7 +11,7 @@ const PaymentPage = () => {
         e.preventDefault();
         try {
             const res = await processPayment(billId, amount, "UPI");
-            setStatus('✅ ' + res); // "Payment successful"
+            setStatus('✅ ' + res);  
         } catch (err) {
             setStatus('❌ Payment Failed (Check Bill ID)');
         }

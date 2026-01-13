@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
-import { getAllCustomers1, updateServiceStatus } from '../services/api'; // <--- Ensure updateServiceStatus is imported
+import { getAllCustomers1, updateServiceStatus } from '../services/api'; 
 
 const CustomersPage = () => {
     const [customers, setCustomers] = useState([]);
-    const [loading, setLoading] = useState(false); // <--- Added missing state
+    const [loading, setLoading] = useState(false);
     const [filteredCustomers, setFilteredCustomers] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -55,7 +55,6 @@ const CustomersPage = () => {
         const service = cust.services && cust.services.length > 0 ? cust.services[0] : null;
         const displayStatus = service ? service.status : (cust.user?.status || 'N/A');
 
-        // Remove 'ACTIVE' from this list so it shows as green
         const isBadStatus = ['RESTRICTED', 'BLOCKED', 'SUSPENDED', 'INACTIVE'].includes(displayStatus);
 
         return (
@@ -97,10 +96,9 @@ const CustomersPage = () => {
                     <tbody>
                         {filteredCustomers.length>0?(
                             filteredCustomers.map(cust=>{
-                            // --- FIX START: Define variables here ---
+
                             const service = cust.services && cust.services.length > 0 ? cust.services[0] : null;
                             const isBlocked = service && ['BLOCKED', 'SUSPENDED', 'RESTRICTED'].includes(service.status);
-                            // --- FIX END ---
 
                             return (
                                 <tr key={cust.id} style={{ borderBottom: '1px solid #ddd' }}>
@@ -155,7 +153,7 @@ const CustomersPage = () => {
     );
 };
 
-// --- CSS Styles ---
+// --- Styles ---
 const tableStyle = {
     width: '100%',
     borderCollapse: 'collapse',

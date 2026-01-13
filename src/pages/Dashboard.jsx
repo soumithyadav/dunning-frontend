@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getDashboardStats } from '../services/api';
-import Navbar from '../components/Navbar'; // <--- Import Navbar
+import Navbar from '../components/Navbar'; 
 
 const Dashboard = () => {
     const [stats, setStats] = useState({

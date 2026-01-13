@@ -53,7 +53,6 @@ const LogsPage = () => {
                                                 <span style={userBadge}>{log.username}</span>
                                             </td>
                                             <td style={tdStyle}>
-                                                {/* Color code actions based on type */}
                                                 <span style={getActionStyle(log.action)}>
                                                     {log.action}
                                                 </span>
@@ -78,14 +77,14 @@ const LogsPage = () => {
     );
 };
 
-// --- Styles & Helpers ---
+// --- Styles ---
 
 const getActionStyle = (action) => {
     const base = { padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '12px' };
-    if (action.includes('PAYMENT')) return { ...base, backgroundColor: '#d1e7dd', color: '#0f5132' }; // Green
-    if (action.includes('BLOCK') || action.includes('DELETE')) return { ...base, backgroundColor: '#f8d7da', color: '#842029' }; // Red
-    if (action.includes('CREATE') || action.includes('UPDATE')) return { ...base, backgroundColor: '#cff4fc', color: '#055160' }; // Blue
-    return { ...base, backgroundColor: '#e2e3e5', color: '#383d41' }; // Grey default
+    if (action.includes('PAYMENT')) return { ...base, backgroundColor: '#d1e7dd', color: '#0f5132' }; 
+    if (action.includes('BLOCK') || action.includes('DELETE')) return { ...base, backgroundColor: '#f8d7da', color: '#842029' }; 
+    if (action.includes('CREATE') || action.includes('UPDATE')) return { ...base, backgroundColor: '#cff4fc', color: '#055160' }; 
+    return { ...base, backgroundColor: '#e2e3e5', color: '#383d41' }; 
 };
 
 const tableStyle = { width: '100%', borderCollapse: 'collapse', marginTop: '20px', boxShadow: '0 0 10px rgba(0,0,0,0.1)' };

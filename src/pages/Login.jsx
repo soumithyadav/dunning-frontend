@@ -8,13 +8,9 @@ const Login = () => {
     const [error, setError] = useState('');
     const [isHovered, setIsHovered] = useState(false);
     const navigate = useNavigate();
-
-    // Clear existing tokens when the login page loads
     useEffect(() => {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
-        
-        // Optional: Reset body styles to ensure full-page background works
         document.body.style.margin = "0"; 
         document.body.style.padding = "0";
         document.body.style.boxSizing = "border-box";
@@ -27,44 +23,33 @@ const Login = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        setError(''); // Clear previous errors
+        setError(''); 
 
         try {
-            // 1. Call the API directly (avoiding interceptor issues for login)
             const response = await axios.post("http://localhost:3000/api/auth/login", {
                 username, 
                 password
             });
-
-            // console.log("Login Response:", response.data); 
-
-            // 2. Extract Token and Role
             const { token, role } = response.data;
 
             if (!token) {
                 throw new Error("Token missing in server response");
             }
-
-            // 3. Store in LocalStorage
             localStorage.setItem("token", token);
             localStorage.setItem("role", role);
-
-            // 4. Redirect based on Role
             if (role === 'ROLE_CUSTOMER' || role === 'CUSTOMER') {
-                navigate('/my-account'); // Redirect to Customer Dashboard
+                navigate('/my-account'); 
             } 
             else if (role === 'ROLE_ADMIN' || role === 'ADMIN') {
                 navigate('/dashboard');  
             } 
             else {
-                // Fallback for unexpected roles
                 console.warn("Unknown role:", role);
                 navigate('/dashboard');
             }
 
         } catch (err) {
             console.error("Login Error:", err);
-            // Handle different error structures (axios error vs generic error)
             const errorMessage = err.response?.data?.message || err.message || "Login failed. Please check credentials.";
             setError(errorMessage);
         }
@@ -119,7 +104,6 @@ const Login = () => {
 };
 
 const styles = {
-    // 1. FULL PAGE CONTAINER
     pageContainer: {
         display: 'flex',
         justifyContent: 'center',
@@ -132,7 +116,6 @@ const styles = {
         top: 0,
         left: 0,
     },
-    // 2. THE CARD
     loginCard: {
         backgroundColor: '#ffffff',
         padding: '40px',

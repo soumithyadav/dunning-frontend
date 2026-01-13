@@ -11,15 +11,12 @@ const ChatWidget = () => {
 
     const handleSend = async () => {
         if (!input.trim()) return;
-
-        // 1. Add User Message
         const userMsg = { sender: 'user', text: input };
         setMessages(prev => [...prev, userMsg]);
         setInput('');
         setLoading(true);
 
         try {
-            // 2. Get AI Response
             const reply = await sendChatMessage(userMsg.text);
             setMessages(prev => [...prev, { sender: 'bot', text: reply }]);
         } catch (err) {
@@ -31,7 +28,6 @@ const ChatWidget = () => {
 
     return (
         <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1000 }}>
-            {/* Chat Window */}
             {isOpen && (
                 <div style={chatWindowStyle}>
                     <div style={headerStyle}>
@@ -66,7 +62,6 @@ const ChatWidget = () => {
                 </div>
             )}
 
-            {/* Floating Toggle Button */}
             {!isOpen && (
                 <button onClick={() => setIsOpen(true)} style={floatBtnStyle}>
                     💬 Help
@@ -76,7 +71,6 @@ const ChatWidget = () => {
     );
 };
 
-// Styles
 const chatWindowStyle = { width: '300px', height: '400px', backgroundColor: 'white', borderRadius: '10px', boxShadow: '0 5px 15px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', overflow: 'hidden' };
 const headerStyle = { backgroundColor: '#007bff', color: 'white', padding: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' };
 const messagesAreaStyle = { flex: 1, padding: '10px', overflowY: 'auto', backgroundColor: '#f9f9f9' };
