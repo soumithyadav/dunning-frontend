@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
-import ChatWidget from '../services/ChatWidget';
+import ChatWidget from '../services/ChatWidget'; // Ensure path is correct
 import {
     getMyProfile,
     getCustomerServices,
@@ -10,8 +10,11 @@ import {
 
 const CustomerDashboard = () => {
     const [customer, setCustomer] = useState(null);
-    const [service, setService] = useState(null); // The telecom service
-    const [bill, setBill] = useState(null);       // The specific unpaid bill
+    const [service, setService] = useState(null);
+    
+    // 🚨 CHANGED: Now storing an ARRAY of bills
+    const [bills, setBills] = useState([]); 
+    
     const [payStatus, setPayStatus] = useState('');
     const [loading, setLoading] = useState(true);
 
@@ -22,53 +25,45 @@ const CustomerDashboard = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            // 1. Get Customer Profile
+            // 1. Get Profile
             const profileData = await getMyProfile();
-            // console.log("customer data:"+profileData);
             setCustomer(profileData);
 
-            // 2. Get Services (TelecomServiceController)
-            // We need the service ID to find bills
+            // 2. Get Service
             const servicesData = await getCustomerServices(profileData.id);
-            // console.log("service data:"+servicesData)
 
             if (servicesData && servicesData.length > 0) {
-                const mainService = servicesData[0]; // Assuming single service for now
-                // console.log("main service data:"+mainService.id);
+                const mainService = servicesData[0];
                 setService(mainService);
 
-                // 3. Get Unpaid Bills (BillingController)
+                // 3. Get All Unpaid Bills
                 const billsData = await getUnpaidBills(mainService.id);
-                // console.log("unpaid bill:"+JSON.stringify(billsData, null, 2));
+                
+                // 🚨 CHANGED: Store ALL bills, not just the first one
                 if (billsData && billsData.length > 0) {
-                    setBill(billsData[0]); // Grab the oldest/first unpaid bill
+                    setBills(billsData); 
                 } else {
-                    setBill(null); // No bills due
+                    setBills([]); // Empty array if no bills
                 }
-            }else{
-                console.warn("No services found for this customer!");
             }
         } catch (err) {
-            console.error("Failed to load dashboard data", err);
+            console.error("Failed to load data", err);
         } finally {
             setLoading(false);
         }
     };
 
-    const handlePayBill = async () => {
-        if (!bill) return;
-
+    // 🚨 CHANGED: Now accepts specific ID and Amount for the clicked bill
+    const handlePayBill = async (billId, billAmount) => {
         try {
-            // MATCHING BACKEND: PaymentController takes billId, amount, mode
-            await processPayment(bill.id, bill.billAmount, "CARD");
+            await processPayment(billId, billAmount, "CARD");
 
-            // UI Feedback from PDF [cite: 16]
-            setPayStatus('✅ Payment Successful! Your services are now restored.');
+            setPayStatus(`✅ Payment of $${billAmount} Successful!`);
 
-            // Refresh data to show "Cured" status immediately
+            // Refresh data to remove the paid bill from the list
             setTimeout(() => {
                 loadData();
-                setPayStatus(''); // Clear message after refresh
+                setPayStatus('');
             }, 3000);
 
         } catch (err) {
@@ -77,24 +72,21 @@ const CustomerDashboard = () => {
         }
     };
 
-    // Calculate Overdue Days
     const calculateOverdueDays = (dueDateString) => {
         if (!dueDateString) return 0;
         const due = new Date(dueDateString);
         const today = new Date();
-        const diffTime = Math.abs(today - due);
+        const diffTime = today - due;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return today > due ? diffDays : 0; // Only count if past due
+        return diffDays > 0 ? diffDays : 0;
     };
 
-    if (loading) return <div style={centerStyle}>Loading account details...</div>;
+    if (loading) return <div style={centerStyle}>Loading...</div>;
     if (!customer) return <div style={centerStyle}>Error loading account.</div>;
 
-    // Determine Status
-    // If we just paid, service might still update, but we assume "Active" if no bills exist
     const currentStatus = service ? service.status : 'UNKNOWN';
     const isBlocked = currentStatus !== 'ACTIVE' && currentStatus !== 'CURED';
-    const overdueDays = bill ? calculateOverdueDays(bill.dueDate) : 0;
+    
 
     return (
         <div style={{ backgroundColor: '#f4f6f8', minHeight: '100vh' }}>
@@ -102,15 +94,20 @@ const CustomerDashboard = () => {
 
             <div style={{ padding: '40px', maxWidth: '100%', margin: '0 auto' }}>
 
+                {/* Header */}
                 <div style={{ marginBottom: '30px' }}>
                     <h1 style={{ color: '#333' }}>Welcome, {customer.name}</h1>
-                    <p style={{ color: '#666' }}>
-                        Manage your {service?.planName || 'Telecom'} subscription.
-                    </p>
+                    <p style={{ color: '#666' }}>Manage your subscription.</p>
+                    
+                    {/* Global Payment Status Message */}
+                    {payStatus && (
+                        <div style={{ padding: '15px', backgroundColor: '#d4edda', color: '#155724', borderRadius: '5px', marginTop: '10px' }}>
+                            {payStatus}
+                        </div>
+                    )}
                 </div>
 
-                {/* --- STATUS CARD --- */}
-                {/* PDF Requirement: View Payment due, overdue days, and status [cite: 9] */}
+                {/* --- 1. STATUS CARD --- */}
                 <div style={cardStyle}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h3 style={{ margin: 0 }}>Service Status</h3>
@@ -118,78 +115,92 @@ const CustomerDashboard = () => {
                             {currentStatus}
                         </span>
                     </div>
-
-                    {/* Show Overdue Days if applicable */}
-                    {overdueDays > 0 && (
-                        <div style={{ marginTop: '10px', color: '#dc3545', fontWeight: 'bold' }}>
-                            📅 {overdueDays} Days Overdue
-                        </div>
-                    )}
-
-                    {/* Status Message from PDF [cite: 10] */}
                     {isBlocked && (
                         <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '4px' }}>
-                            ⚠️ Your services are restricted due to non-payment.
+                            ⚠️ Services restricted. Please pay all pending bills.
                         </div>
                     )}
                 </div>
 
-                {/* --- BILLING CARD --- */}
-                <div style={cardStyle}>
-                    <h3 style={{ marginTop: 0 }}>Current Bill</h3>
+                {/* --- 2. BILLS SECTION (LOOP) --- */}
+                <h3 style={{ marginTop: '30px', color: '#444' }}>Pending Bills ({bills.length})</h3>
+                
+                {bills.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+                        
+                        {/* 🚨 LOOPING THROUGH BILLS HERE */}
+                        {bills.map((bill) => {
+                            const daysOverdue = calculateOverdueDays(bill.dueDate);
+                            
+                            return (
+                                <div key={bill.id} style={billCardStyle}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                        <span style={{ fontWeight: 'bold', color: '#555' }}>Bill #{bill.id}</span>
+                                        {daysOverdue > 0 && (
+                                            <span style={{ color: 'red', fontSize: '12px', fontWeight: 'bold' }}>
+                                                {daysOverdue} Days Overdue
+                                            </span>
+                                        )}
+                                    </div>
+                                    
+                                    <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#333', marginBottom: '5px' }}>
+                                        {bill.billAmount}
+                                    </div>
+                                    <div style={{ fontSize: '14px', color: '#777', marginBottom: '15px' }}>
+                                        Due: {bill.dueDate}
+                                    </div>
 
-                    {bill ? (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '20px' }}>
-                            <div>
-                                <p style={{ margin: '0 0 5px 0', color: '#666' }}>Amount Due</p>
-                                {/* Dynamic Amount */}
-                                <span style={{ fontSize: '32px', fontWeight: 'bold', color: '#333' }}>
-                                    {bill.billAmount}
-                                </span>
-                                <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#888' }}>
-                                    Due Date: {bill.dueDate}
-                                </p>
-                            </div>
-
-                            {/* Dynamic Payment Trigger [cite: 13] */}
-                            <button onClick={handlePayBill} style={payButtonStyle}>
-                                Pay Now
-                            </button>
-                        </div>
-                    ) : (
-                        <div style={{ marginTop: '20px', color: 'green' }}>
+                                    <button 
+                                        onClick={() => handlePayBill(bill.id, bill.billAmount)} 
+                                        disabled={isBlocked}
+                                        style={isBlocked ? { ...payButtonStyle, ...disabledButtonStyle } : payButtonStyle}
+                                    >
+                                        Pay Now
+                                    </button>
+                                    {isBlocked && (
+                                        <button 
+                                            onClick={() => alert('Contacting admin...')}
+                                            style={contactAdminButtonStyle}
+                                        >
+                                            Contact Admin
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div style={cardStyle}>
+                        <div style={{ color: 'green', textAlign: 'center', fontSize: '18px' }}>
                             ✅ No pending bills. You are all caught up!
                         </div>
-                    )}
+                    </div>
+                )}
 
-                    {/* Payment Feedback Message */}
-                    {payStatus && (
-                        <p style={{ marginTop: '15px', fontWeight: 'bold', color: payStatus.includes('✅') ? 'green' : 'red' }}>
-                            {payStatus}
-                        </p>
-                    )}
-                </div>
-
-                {/* --- PROFILE CARD --- */}
-                <div style={cardStyle}>
+                {/* --- 3. PROFILE CARD --- */}
+                <div style={{ ...cardStyle, marginTop: '30px' }}>
                     <h4 style={{ marginTop: 0, color: '#666' }}>My Profile</h4>
                     <p><strong>Email:</strong> {customer.user?.email}</p>
                     <p><strong>Phone:</strong> {customer.user?.phone}</p>
-                    {/* Placeholder for Last Payment (Requires new Backend API) */}
-                    <p><strong>Last Payment:</strong> {service?.lastPaymentDate || 'N/A'}</p>
+                    <hr style={{ border: '0', borderTop: '1px solid #eee', margin: '15px 0' }}/>
+                    <p><strong>Last Payment:</strong> <span style={{color: 'green'}}>{service?.lastPaymentDate || 'N/A'}</span></p>
+                    <p><strong>Next Bill Due:</strong> <span style={{color: '#007bff'}}>{service?.nextDueDate || 'N/A'}</span></p>
                 </div>
 
             </div>
-             <ChatWidget />
+            <ChatWidget />
         </div>
     );
 };
 
 // --- Styles ---
 const centerStyle = { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontSize: '20px', color: '#666' };
-const cardStyle = { backgroundColor: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', marginBottom: '20px' };
+const cardStyle = { backgroundColor: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' };
+const billCardStyle = { backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderLeft: '5px solid #007bff' };
 const activeBadge = { backgroundColor: '#d1e7dd', color: '#0f5132', padding: '8px 16px', borderRadius: '20px', fontWeight: 'bold' };
 const blockedBadge = { backgroundColor: '#f8d7da', color: '#842029', padding: '8px 16px', borderRadius: '20px', fontWeight: 'bold' };
-const payButtonStyle = { backgroundColor: '#007bff', color: 'white', border: 'none', padding: '12px 24px', fontSize: '16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' };
+const payButtonStyle = { backgroundColor: '#28a745', color: 'white', border: 'none', padding: '10px 0', width: '100%', fontSize: '16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', marginTop: '10px' };
+const disabledButtonStyle = { backgroundColor: '#6c757d', cursor: 'not-allowed', opacity: '0.6' };
+const contactAdminButtonStyle = { backgroundColor: '#007bff', color: 'white', border: 'none', padding: '10px 0', width: '100%', fontSize: '16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', marginTop: '10px' };
 
 export default CustomerDashboard;
